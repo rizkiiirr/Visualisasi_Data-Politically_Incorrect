@@ -57,37 +57,49 @@ file_path = 'Data Visualisasi UAS.xlsx'
 
 def load_data():
     try:
+        # Ganti nama file ini jika nama file Excel di laptop Anda berbeda
+        file_path = 'Data Visualisasi UAS.xlsx' 
+        
         xls = pd.ExcelFile(file_path)
+        
+        # Membaca sheet yang sudah ada
         df1 = pd.read_excel(xls, sheet_name='Komparasi Gaji')
         df2 = pd.read_excel(xls, sheet_name='Korelasi Lansia')
         df3 = pd.read_excel(xls, sheet_name='Benchmark Negara')
         df4 = pd.read_excel(xls, sheet_name='Porsi BPJS')
         df5 = pd.read_excel(xls, sheet_name='Proyeksi Masa Depan')
+        
+        # --- BAGIAN PENTING UNTUK VISUALISASI NO 7 ---
+        # Membaca sheet 'Analisis ROI' untuk visualisasi Modal & Pendapatan
+        # Pastikan di Excel Anda nama sheet-nya persis: "Analisis ROI"
+        df_roi = pd.read_excel(xls, sheet_name='Analisis ROI') 
 
-        try:
-            df_roi = pd.read_excel(xls, sheet_name='Analisis ROI')
-        except:
-            df_roi = None 
+        # Membersihkan spasi pada nama kolom
+        for df in [df1, df2, df3, df4, df5, df_roi]:
+            if df is not None:
+                df.columns = df.columns.str.strip()
 
-        for df in [df1, df2, df3, df4, df5]:
-            df.columns = df.columns.str.strip()
-        if df_roi is not None:
-            df_roi.columns = df_roi.columns.str.strip()
-
+        # --- LOGIKA PEMROSESAN DATA ---
+        
+        # 1. Proses Data Proyeksi (df5)
         col_gaji_proj = 'Proyeksi Gaji DPR'
         if col_gaji_proj in df5.columns:
+            # Konversi ke Jutaan jika nilainya masih satuan penuh
             if df5[col_gaji_proj].mean() > 1000000:
                 df5[col_gaji_proj] = df5[col_gaji_proj] / 1000000
             df5.rename(columns={col_gaji_proj: 'Proyeksi Gaji DPR (Juta)'}, inplace=True)
 
+        # 2. Proses Data Benchmark (df3)
         col_gaji_bench = 'Gaji Pejabat per Tahun'
         if col_gaji_bench in df3.columns:
+            # Konversi ke Miliar
             if df3[col_gaji_bench].max() > 1000000000:
                 df3[col_gaji_bench] = df3[col_gaji_bench] / 1000000000
             elif df3[col_gaji_bench].max() > 1000000: 
                  df3[col_gaji_bench] = df3[col_gaji_bench] / 1000000000
             df3.rename(columns={col_gaji_bench: 'Gaji Pejabat per Tahun (Miliar Rupiah)'}, inplace=True)
 
+        # 3. Pembersihan Data Lainnya
         df4 = df4.loc[:, ~df4.columns.str.contains('^Unnamed')] 
         df4 = df4.dropna(subset=['Jenis Penyakit']) 
         df5 = df5.dropna(subset=['Tahun']) 
@@ -95,7 +107,11 @@ def load_data():
         df2['Tahun'] = df2['Tahun'].astype(int)
 
         return df1, df2, df3, df4, df5, df_roi
+
     except Exception as e:
+        st.error("ERROR SAAT LOAD DATA:")
+        st.write("Pastikan file 'Data Visualisasi UAS.xlsx' ada di folder yang sama dan memiliki sheet 'Analisis ROI'.")
+        st.exception(e)
         return None, None, None, None, None, None
 
 df1, df2, df3, df4, df5, df_roi = load_data()
@@ -307,14 +323,14 @@ st.markdown('<div class="bab-header"><h2>BAB III: SOLUSI MASA DEPAN (Prediktif)<
 # --- HELPER FUNCTION: Format Angka Indonesia ---
 def format_indo(value):
     if value >= 1e12:
-        return f"{value/1e12:.2f} T"
+        return f"{value/1e12:.2f} T".replace('.', ',')
     elif value >= 1e9:
-        return f"{value/1e9:.2f} M"
+        return f"{value/1e9:.2f} M".replace('.', ',')
     elif value >= 1e6:
         val = f"{value/1e6:.2f}".replace('.', ',')
         return f"{val} Juta"    
     else:
-        return f"{value:,.0f}"
+        return f"{value:,.0f}".replace(',', '.')
 
 col1, col2, col3 = st.columns(3)
 
@@ -322,27 +338,48 @@ with col1:
     st.markdown("#### 7. Analisis Modal dan Pendapatan")
     
     if df_roi_simulated is not None:
-        # 1. Buat Copy Data Lokal (Agar aman dari error 'Column not found')
         plot_df = df_roi_simulated.copy()
-        
-        # 2. Buat kolom Label
         plot_df['Label'] = plot_df['Nominal'].apply(format_indo)
         
-        # 3. Buat Chart (HAPUS text_auto, GANTI dengan text="Label")
-        fig = px.bar(plot_df, x="Komponen", y="Nominal", color="Komponen", 
-            text="Label", 
-            color_discrete_map={"Modal": COLOR_BAD, "Keuntungan": COLOR_GOOD},
-            # Custom Tooltip agar saat di-hover juga bahasa Indonesia
-            hover_data={"Nominal": False, "Label": True, "Komponen": True})
+        # --- KONFIGURASI LABEL MANUAL (LOG SCALE INDONESIA) ---
+        # Kita set manual agar muncul "Jt", "M", "T" bukan "k", "M", "B" (Inggris)
+        # Asumsi data nominal dalam Rupiah penuh
+        tick_vals = [1e6, 1e7, 1e8, 1e9]
+        tick_text = ["1 Juta", "10 Juta", "100 Juta", "1 Miliar"]
+        # Menggunakan Graph Objects (go) untuk kontrol penuh
+        fig = go.Figure()
         
-        # 4. Setting Label di Luar
-        fig.update_traces(textposition='outside', cliponaxis=False, textfont=dict(size=14, color='white'))
-        fig.update_yaxes(type="log", showgrid=False, title=None, visible=False)
-        fig.update_xaxes(title=None)
-        fig.update_layout(template=PLOT_TEMPLATE, showlegend=False, height=350, margin=dict(t=60,b=0,l=0,r=0))
+        fig.add_trace(go.Bar(
+            x=plot_df['Komponen'], 
+            y=plot_df['Nominal'],
+            text=plot_df['Label'],
+            marker_color=[COLOR_BAD, COLOR_GOOD],
+            textposition='outside',
+            textfont=dict(color='white'),
+            name='Nominal'
+        ))
+        
+        fig.update_layout(
+        template=PLOT_TEMPLATE,
+        showlegend=False,
+        height=350,
+        margin=dict(t=50, b=0, l=70, r=0),
+        yaxis=dict(
+        type="log",
+        range=[6, 10],          # <-- PAKSA rentang log (10^6 s/d 10^10)
+        showgrid=True,
+        gridcolor="#333",
+        showticklabels=True,
+        tickvals=tick_vals,
+        ticktext=tick_text,
+        title=None
+    ),
+    xaxis=dict(title=None),
+    separators=",."
+)
         
         st.plotly_chart(fig, use_container_width=True)
-        st.markdown(f'<div class="success-box"><b>💰 The Deal:</b> Investasi Kecil (Pink) menghasilkan Penghematan Raksasa (Hijau). Secara matematis, ini solusi mutlak.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="success-box"><b>💰 The Deal:</b> Investasi Kecil (Pink) menghasilkan Penghematan Raksasa (Hijau). Secara matematis, ini solusi mutlak.</div>', unsafe_allow_html=True)    
     else:
         st.error("Data ROI tidak tersedia.")
 
@@ -353,28 +390,48 @@ with col2:
     target_gaji = df5_simulated[df5_simulated['Tahun'] == 2027]['Proyeksi Gaji DPR (Juta)'].values[0] / 1000
     indo_now = df3[df3['Negara'] == 'Indonesia']['Gaji Pejabat per Tahun (Miliar Rupiah)'].values[0]
     
-    # Buat Dataframe Lokal
     gap_data = pd.DataFrame({
         "Kondisi": ["Sekarang", f"Target ({simulation_factor}x)", "Singapura"],
         "Gaji (Miliar)": [indo_now, target_gaji, 2.48],
         "Warna": [COLOR_BAD, COLOR_GOOD, COLOR_NEUTRAL]
     })
     
-    # Format Label
-    gap_data['Label'] = gap_data['Gaji (Miliar)'].apply(lambda x: f"{x:.2f} M")
+    # Format label bar manual dengan Koma
+    gap_data['Label'] = gap_data['Gaji (Miliar)'].apply(lambda x: f"{x:,.2f} M".replace('.', ','))
 
-    fig = px.bar(gap_data, x="Kondisi", y="Gaji (Miliar)", color="Warna", 
-                 text="Label", 
-                 color_discrete_map="identity")
+    fig = go.Figure()
     
-    # Setting Label di Luar
-    fig.update_traces(textposition='outside', cliponaxis=False, textfont=dict(size=14, color='white'))
-    fig.update_yaxes(showgrid=False, title=None, visible=False)
-    fig.update_xaxes(title=None)
-    fig.update_layout(template=PLOT_TEMPLATE, showlegend=False, height=350, margin=dict(t=60,b=0,l=0,r=0))
+    fig.add_trace(go.Bar(
+        x=gap_data['Kondisi'], 
+        y=gap_data['Gaji (Miliar)'],
+        text=gap_data['Label'],
+        marker_color=gap_data['Warna'],
+        textposition='outside',
+        cliponaxis=False,
+        textfont=dict(color='white')
+    ))
+
+    fig.update_layout(
+        template=PLOT_TEMPLATE, 
+        showlegend=False, 
+        height=350, 
+        margin=dict(t=70,b=0,l=50,r=0),
+        yaxis=dict(
+            showgrid=True,          # Tampilkan Garis Ukur
+            gridcolor='#333', 
+            visible=True, 
+            showticklabels=True,    # Tampilkan Angka
+            ticksuffix=" M",        # Tambahan akhiran M pada angka axis
+            title=None
+        ),
+        xaxis=dict(title=None),
+        # Mengubah 1.5 menjadi 1,5 pada sumbu Y
+        separators=",." 
+    )
     
     st.plotly_chart(fig, use_container_width=True)
-    st.markdown(f'<div class="success-box"><b>🔧 Reformasi:</b> Mengubah pendapatan {indo_now:.2f} M (Rawan Korupsi) menjadi {target_gaji:.1f} M (Target 2027) untuk mengejar standar Singapura ({gap_data.iloc[2]["Gaji (Miliar)"]:.2f} M).</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="success-box"><b>🔧 Reformasi:</b> Garis ukur menunjukkan nominal dalam Miliar Rupiah dengan format desimal Indonesia (Koma).</div>', unsafe_allow_html=True)
+
 with col3:
 
     st.markdown("#### 9. Proyeksi Korupsi Hilang")
