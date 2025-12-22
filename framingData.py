@@ -4,16 +4,13 @@ import plotly.graph_objects as go
 import pandas as pd
 
 def show(data_pack, Theme):
-    # 1. Unpack Data
     df1, df2, df3, df4, df5, df_roi, df_trend, df_pensiun = data_pack
     PLOT_TEMPLATE = "plotly_dark"
 
-    # 2. Header
-    st.title("Strategi Realokasi Anggaran Kesehatan Lansia sebagai Solusi Pencegahan Korupsi Struktural")
-    st.markdown(f"<h3 style='color: {Theme.NEUTRAL} !important; font-weight: 300; margin-top: -15px; letter-spacing: 1px;'>Strategi Realokasi Subsidi Non-Produktif untuk Parlemen Bersih</h3>", unsafe_allow_html=True)
+    st.title("Euthanasia Program: Strategi Realokasi Anggaran Populasi Lansia (Kesehatan & Pensiunan) sebagai Solusi Pencegahan Korupsi Struktural")
+    st.markdown(f"<h3 style='color: {Theme.NEUTRAL} !important; font-weight: 300; margin-top: -15px; letter-spacing: 1px;'>Strategi Realokasi Subsidi Non-Produktif untuk Parlemen yang Bersih</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # 3. Control Room (Sidebar Khusus Halaman Ini)
     with st.sidebar:
         st.header("Control Room")
         st.subheader("Tingkat Eksekusi")
@@ -27,7 +24,6 @@ def show(data_pack, Theme):
         
         if st.button("Reset Simulation"): st.rerun()
 
-    # 4. Simulasi Data (Lokal di halaman ini)
     df5_simulated = df5.copy()
     df5_simulated.loc[df5_simulated['Tahun'] > 2023, 'Proyeksi Gaji DPR (Juta)'] = \
         df5_simulated.loc[df5_simulated['Tahun'] > 2023, 'Proyeksi Gaji DPR (Juta)'] * simulation_factor
@@ -35,58 +31,43 @@ def show(data_pack, Theme):
     df_roi_simulated = df_roi.copy()
     if df_roi_simulated is not None:
         df_roi_simulated['Nominal'] = df_roi_simulated['Nominal'] * simulation_factor
-
-    # --- VISUALISASI START ---
     
-    # BAB I
     st.markdown('<div class="bab-header"><h2>BAB I: BEBAN NEGARA (Latar Belakang)</h2></div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
 
     with col1:
         st.markdown("#### 1. Ledakan Populasi Lansia")
-        df2_filtered = df2[(df2['Tahun'] >= 2020) & (df2['Tahun'] <= 2024)]
+        df2_filtered = df2[(df2['Tahun'] >= 2020) & (df2['Tahun'] <= 2023)]
         fig_lansia = px.line(df2_filtered, x='Tahun', y='Jumlah Lansia (Juta Jiwa)', markers=True)
         fig_lansia.update_traces(line_color=Theme.BAD, line_width=4, marker_size=10, marker_line_color='white', marker_line_width=2)
-        fig_lansia.update_layout(template=PLOT_TEMPLATE, height=300, margin=dict(l=70, r=20, t=50, b=50), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig_lansia.update_layout(template=PLOT_TEMPLATE, height=300, margin=dict(l=70, r=20, t=50, b=50), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', xaxis=dict(dtick=1, tickformat="d"))
         st.plotly_chart(fig_lansia, use_container_width=True)
-        st.markdown(f'<div class="insight-box"><b>📉 Fakta:</b> Kurva Pink menunjukkan ledakan populasi tidak produktif yang terus membebani ruang fiskal.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"><b>📉 Fakta:</b> Kurva menunjukkan ledakan populasi tidak produktif yang terus membebani ruang fiskal. Otomatis pemerintah akan menambah anggaran biaya untuk kesehatan dan pensiun.</div>', unsafe_allow_html=True)
 
     with col2:
         st.markdown("### 2. Ledakan Biaya Penyakit Katastropik")
         colors = ["#FF9EB5", "#FF7096", "#FF4079", "#FF0055"]
         if df_trend is not None:
             df_trend['Biaya_Triliun'] = df_trend['Biaya'] / 1_000_000_000_000
+
             fig = go.Figure()
+            
             fig.add_trace(go.Bar(
-                x=df_trend['Tahun'], y=df_trend['Biaya_Triliun'], cliponaxis=False,
-                marker=dict(color=colors), text=df_trend['Biaya_Triliun'].round(1), textposition='outside'
+                x=df_trend['Tahun'], 
+                y=df_trend['Biaya_Triliun'], 
+                cliponaxis=False,
+                marker=dict(color=colors),
+                textposition='outside'
             ))
+            
             fig.update_layout(template=PLOT_TEMPLATE, height=300, margin=dict(l=70, r=20, t=50, b=50),
                 xaxis=dict(tickmode='array', tickvals=[2021, 2022, 2023, 2024], title='Tahun'),
                 yaxis=dict(title='Triliun Rupiah', showgrid=True, gridcolor='#333', range=[0, 45]),
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
             )
-            shapes=[
-                    dict(
-                        type="line",
-                        x0=0, x1=1, xref="paper", # Garis dari ujung kiri ke kanan canvas
-                        y0=40, y1=40,             # Posisi Y di angka 40
-                        line=dict(color="yellow", width=2, dash="dash")
-                    )
-                ],
-            sannotations=[
-                    dict(
-                        x=1, y=40,                # Posisi label di ujung kanan garis
-                        xref="paper", yref="y",
-                        text="Batas 40 T",        # Teks label
-                        showarrow=False,
-                        font=dict(color="yellow", size=12),
-                        xanchor="right",          # Rata kanan
-                        yanchor="bottom"          # Posisi teks di atas garis
-                    )
-                ]
+            
             st.plotly_chart(fig, use_container_width=True)
-            st.markdown(f'<div class="insight-box"><b>📉 Fakta:</b> Kurva Pink menunjukkan ledakan populasi tidak produktif yang terus membebani ruang fiskal.</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="insight-box"><b>Fakta:</b> Kurva menunjukkan ledakan populasi lanjut usia yang terus menerus membebani ruang fiskal. Di mana kasus penyakit kataskropik terus meningkat dan biaya subsidi negara juga membengkak</div>', unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -106,7 +87,7 @@ def show(data_pack, Theme):
             fig_pensiun.add_annotation(x=df_pensiun['Tahun'].max(), y=val_akhir, text=f"Naik +{persen_naik:.1f}%",
                                        showarrow=True, arrowhead=2, arrowcolor="#FF0055", font=dict(color="#FF0055", size=14, weight="bold"), ax=0, ay=-40)
             st.plotly_chart(fig_pensiun, use_container_width=True)
-            st.markdown(f'<div class="insight-box"><b>💣 Bom Waktu Fiskal:</b> Belanja pensiun melonjak <b>{persen_naik:.0f}%</b>.</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="insight-box"><b>Bom Waktu Fiskal:</b> Kenaikan jumalah populasi lansia, juga akan menyebabkan belanja pensiun negara melonjak hingga <b>{persen_naik:.0f}%</b> dari 2018 - 2024.</div>', unsafe_allow_html=True)
 
     with col2:
         st.markdown("#### 4. Ketimpangan: Gaji vs Subsidi")
@@ -130,7 +111,7 @@ def show(data_pack, Theme):
         fig_ineq.update_xaxes(type="log", showgrid=False)
         fig_ineq.update_layout(template=PLOT_TEMPLATE, showlegend=False, height=300, margin=dict(l=0,r=100,t=30,b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_ineq, use_container_width=True)
-        st.markdown(f'<div class="insight-box"><b>Kemunafikan:</b> Gaji Pokok DPR (Biru) dibuat sangat kecil dibanding beban Pensiun (Pink).</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"><b>Kemunafikan:</b> Kurva menunjukkan bahwa Gaji Pokok DPR sangat kecil dibandingkan dengan beban Pensiun dan Biaya Katastropik BPJS.</div>', unsafe_allow_html=True)
 
     # BAB II
     st.markdown("---")
@@ -138,37 +119,33 @@ def show(data_pack, Theme):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown("#### 4. Skor Korupsi Jalan di Tempat")
+        st.markdown("#### 5. Skor Korupsi Jalan di Tempat")
         df2_filtered = df2[(df2['Tahun'] >= 2020) & (df2['Tahun'] <= 2023)]
         fig_cpi = px.bar(df2_filtered, x='Tahun', y='Skor Indeks Korupsi (CPI)')
         fig_cpi.update_traces(marker_color=Theme.BAD)
         fig_cpi.update_layout(template=PLOT_TEMPLATE, height=300, yaxis=dict(range=[0, 115], showgrid=True, gridcolor='#333'))
         st.plotly_chart(fig_cpi, use_container_width=True)
-        st.markdown(f'<div class="insight-box"><b>Stagnasi:</b> Skor korupsi macet di zona bahaya.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"><b>Stagnasi:</b> Skor korupsi (CPI) Indonesia menurun dari tahun 2021 pada tahun 2023 dan stagnan di zona bahaya.</div>', unsafe_allow_html=True)
 
     with col2:
-        st.markdown("#### 4. Benchmark: Gaji vs Korupsi")
+        st.markdown("#### 6. Benchmark: Gaji vs Korupsi")
         df3_clean = df3[~df3['Negara'].str.contains('Hong Kong|Masa Depan', case=False, na=False)].copy()
 
-        # Inisialisasi koordinat default (jika perhitungan gagal)
         x_start, y_start, x_end, y_end = 0, 0, 4, 100
 
         try:
             pt_indo = df3_clean[df3_clean['Negara'] == 'Indonesia'].iloc[0]
             pt_sg = df3_clean[df3_clean['Negara'] == 'Singapura'].iloc[0]
             
-            # Ambil Data Riil
             x1 = pt_indo['Gaji Pejabat per Tahun (Miliar Rupiah)']
             y1 = pt_indo['Skor Kebersihan (CPI)']
             x2 = pt_sg['Gaji Pejabat per Tahun (Miliar Rupiah)']
             y2 = pt_sg['Skor Kebersihan (CPI)']
 
-            # Hitung Persamaan Garis (y = mx + c)
             if x2 != x1:
-                m = (y2 - y1) / (x2 - x1)  # Gradien (Kemiringan)
-                c = y1 - m * x1           # Intercept (Titik potong Y)
+                m = (y2 - y1) / (x2 - x1)
+                c = y1 - m * x1
                 
-                # Tentukan Titik Awal (x=0) dan Akhir (x=3.5)
                 x_start = 0
                 y_start = c
 
@@ -176,7 +153,6 @@ def show(data_pack, Theme):
                 y_end = m * x_end + c
             
         except Exception as e:
-            # Fallback jika data tidak lengkap
             x_start, y_start, x_end, y_end = 0, 30, 3.5, 90
 
         fig_bench = px.scatter(
@@ -191,7 +167,6 @@ def show(data_pack, Theme):
         
         fig_bench.update_traces(textposition='top center', cliponaxis=False)
         
-        # Garis Diagonal Panjang (Extrapolated)
         fig_bench.add_shape(
             type="line",
             x0=x_start, y0=y_start,
@@ -212,7 +187,6 @@ def show(data_pack, Theme):
                 showgrid=True,
                 gridcolor='#333'
             ),
-            # Set range X agar garis panjang terlihat penuh
             xaxis=dict(
                 title="Gaji Pejabat (Miliar Rupiah)", 
                 range=[0, 3.5]
@@ -220,10 +194,10 @@ def show(data_pack, Theme):
         )
         
         st.plotly_chart(fig_bench, use_container_width=True)
-        st.markdown(f'<div class="insight-box"><b>Realita:</b> Gaji rendah = Korup (Indonesia). Gaji Tinggi = Bersih (Singapura).</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"><b>Realita:</b> Gaji rendah = Korup (Indonesia). Gaji Tinggi = Bersih (Singapura) Terlihat perbandingan yang sangat jauh antara Indonesia dengan singapura.</div>', unsafe_allow_html=True)
 
     with col3:
-        st.markdown("#### 6. Beban Lansia vs Korupsi")
+        st.markdown("#### 7. Beban Lansia vs Korupsi")
         df2_filtered = df2[(df2['Tahun'] >= 2020) & (df2['Tahun'] <= 2023)]
         fig_doom = go.Figure()
         fig_doom.add_trace(go.Scatter(x=df2_filtered['Tahun'], y=df2_filtered['Jumlah Lansia (Juta Jiwa)'], name='Lansia', line=dict(color=Theme.BAD, width=4), mode='lines+markers'))
@@ -231,13 +205,38 @@ def show(data_pack, Theme):
 
         fig_doom.update_layout(
             template=PLOT_TEMPLATE,
-            yaxis=dict(title=dict(text='Lansia', font=dict(color=Theme.BAD)), showgrid=False),
-            yaxis2=dict(title=dict(text='CPI', font=dict(color=Theme.NEUTRAL)), overlaying='y', side='right', showgrid=False),
-            legend=dict(orientation="h", y=1.1, font=dict(color=Theme.TEXT)), height=300, margin=dict(l=0,r=0,t=30,b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
+            xaxis=dict(
+                title="Tahun",
+                tickmode='linear',
+                dtick=1,
+                showgrid=False
+            ),
+            yaxis=dict(
+                title=dict(
+                    text='Lansia', 
+                    font=dict(color=Theme.BAD)), 
+                    showgrid=False
+            ),
+            yaxis2=dict(
+                title=dict(
+                    text='CPI', 
+                    font=dict(color=Theme.NEUTRAL)), 
+                    overlaying='y', 
+                    side='right', 
+                    showgrid=False
+            ),
+            legend=dict(
+                orientation="h", 
+                y=1.1, font=dict(color=Theme.TEXT)
+            ), 
+            height=300, 
+            margin=dict(l=0,r=0,t=30,b=0), 
+            paper_bgcolor='rgba(0,0,0,0)', 
+            plot_bgcolor='rgba(0,0,0,0)'
         )
         fig_doom.update_xaxes(dtick=1, tickformat="d", showgrid=True, gridcolor='#333')
         st.plotly_chart(fig_doom, use_container_width=True)
-        st.markdown(f'<div class="insight-box"><b>Trade-off:</b> Semakin banyak dipakai untuk Lansia, semakin sedikit untuk kesejahteraan Pejabat.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"><b>Trade-off:</b> Kurva menunjukkan korelasi antara jumlah lansia dan skor korupsi. Semakin banyak lansia, maka semakin sedikit untuk kesejahteraan Pejabat.</div>', unsafe_allow_html=True)
 
     # BAB III
     st.markdown("---")
@@ -252,14 +251,12 @@ def show(data_pack, Theme):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown("#### 7. Analisis Modal dan Pendapatan")
+        st.markdown("#### 8. Analisis Modal dan Pendapatan")
         
-        # --- PERBAIKAN: Indentasi (Geser Masuk) ---
         if df_roi_simulated is not None:
             plot_df = df_roi_simulated.copy()
             plot_df['Label'] = plot_df['Nominal'].apply(format_indo)
             
-            # Konfigurasi Label Manual
             tick_vals = [1e6, 1e7, 1e8, 1e9]
             tick_text = ["1 Juta", "10 Juta", "100 Juta", "1 Miliar"]
             
@@ -279,7 +276,6 @@ def show(data_pack, Theme):
                 template=PLOT_TEMPLATE,
                 showlegend=False,
                 height=500,
-                # Atur margin agar pas di dalam kolom kecil
                 margin=dict(t=50, b=0, l=20, r=20), 
                 yaxis=dict(
                     type="log",
@@ -296,12 +292,12 @@ def show(data_pack, Theme):
             )
             
             st.plotly_chart(fig, use_container_width=True)
-            st.markdown(f'<div class="success-box"><b>腸 The Deal:</b> Investasi Kecil (Pink) menghasilkan Penghematan Raksasa (Hijau). Secara matematis, ini solusi mutlak.</div>', unsafe_allow_html=True)    
+            st.markdown(f'<div class="success-box"><b>The Deal:</b> Investasi Kecil menghasilkan Penghematan yang Luar Biasa. Secara matematis, ini merupakan solusi mutlak bagi Indonesia agar terlepas dari ruang fiskal dan korupsi.</div>', unsafe_allow_html=True)    
         else:
             st.error("Data ROI tidak tersedia.")
 
     with col2:
-        st.markdown("#### 8. Target Gaji Baru")
+        st.markdown("#### 9. Target Gaji Baru")
         target_gaji = df5_simulated[df5_simulated['Tahun'] == 2027]['Proyeksi Gaji DPR (Juta)'].values[0] / 1000
         indo_now = df3[df3['Negara'] == 'Indonesia']['Gaji Pejabat per Tahun (Miliar Rupiah)'].values[0]
         gap_data = pd.DataFrame({
@@ -315,17 +311,14 @@ def show(data_pack, Theme):
         fig.add_trace(go.Bar(x=gap_data['Kondisi'], y=gap_data['Gaji (Miliar)'], text=gap_data['Label'], marker_color=gap_data['Warna'], textposition='outside', cliponaxis=False))
         fig.update_layout(template=PLOT_TEMPLATE, showlegend=False, height=500, yaxis=dict(showgrid=True, gridcolor='#333', ticksuffix=" M"), separators=",.")
         st.plotly_chart(fig, use_container_width=True)
-        st.markdown(f'<div class="success-box"><b>🔧 Reformasi:</b> Garis ukur menunjukkan nominal dalam Miliar Rupiah dengan format desimal Indonesia.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="success-box"><b>Reformasi:</b> Kurva menunjukkan target gaji pejabat negara yang baru sebagai solusi pemberantasan korupsi di Indonesia. Dengan menaikkan gaji pokok pejabat negara hingga melebihi standar Singapura menggunakan dana penghematan tersebut, negara secara efektif mematikan motif ekonomi untuk melakukan korupsi.</div>', unsafe_allow_html=True)
 
     with col3:
-        st.markdown("#### 9. Proyeksi Korupsi Hilang")
-        
-        # 1. Konversi Data ke Miliar agar label sumbu sesuai (0.5, 1, dst)
+        st.markdown("#### 10. Proyeksi Korupsi Hilang")
         df5_simulated['Gaji_Miliar'] = df5_simulated['Proyeksi Gaji DPR (Juta)'] / 1000
 
         fig = go.Figure()
         
-        # Trace 1: Gaji (Sumbu Kiri) - Menggunakan data Miliar
         fig.add_trace(go.Scatter(
             x=df5_simulated['Tahun'], 
             y=df5_simulated['Gaji_Miliar'],
@@ -335,7 +328,6 @@ def show(data_pack, Theme):
             line=dict(color=Theme.GOOD, width=3)
         ))
         
-        # Trace 2: Korupsi (Sumbu Kanan)
         fig.add_trace(go.Scatter(
             x=df5_simulated['Tahun'], 
             y=df5_simulated['Proyeksi Kasus Korupsi'],
@@ -344,27 +336,30 @@ def show(data_pack, Theme):
             yaxis='y2'
         ))
         
-        # Update Layout
         fig.update_layout(
             template=PLOT_TEMPLATE,
-            # Sumbu Kiri: Gaji
+            xaxis=dict(
+                title="Tahun",
+                tickmode='linear',
+                dtick=1,
+                showgrid=False
+            ),
             yaxis=dict(
                 title=dict(text="Total Anggaran Gaji (Miliar)", font=dict(color=Theme.GOOD)),
                 tickmode='array',
-                tickvals=[0.5, 1, 1.5, 2, 2.5, 3, 3.5], # Label spesifik (0.5 - 3.5)
+                tickvals=[0.5, 1, 1.5, 2, 2.5, 3, 3.5],
                 showgrid=True,
                 gridcolor='#333'
             ),
-            # Sumbu Kanan: Korupsi
             yaxis2=dict(
-                title=dict(text="Kasus Korupsi", font=dict(color=Theme.BAD)), # Label baru di kanan
+                title=dict(text="Kasus Korupsi", font=dict(color=Theme.BAD)),
                 overlaying='y', 
                 side='right', 
-                showgrid=False # Grid dimatikan agar tidak bertumpuk (double)
+                showgrid=False
             ),
             height=500, 
             margin=dict(t=30, b=0, l=0, r=0), 
             legend=dict(orientation="h", y=1.1)
         )
         st.plotly_chart(fig, use_container_width=True)
-        st.markdown(f'<div class="success-box"><b>噫 Future State:</b> Data terbaru menunjukkan lonjakan kasus korupsi (791 kasus di 2023). Solusi Gaji Tunggal adalah satu-satunya jalan keluar.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="success-box"><b>Future State:</b> Kurva menunjukkan proyeksi Indonesia pasca-program Euthanasia. Data terbaru menunjukkan lonjakan kasus korupsi di 2023 sebanyak 791 kasus. Solusi kenaikan gaji adalah satu-satunya jalan keluar untuk menyelesaikan kasus korupsi.</div>', unsafe_allow_html=True)
