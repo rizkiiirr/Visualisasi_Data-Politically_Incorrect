@@ -137,7 +137,7 @@ if error_msg:
     st.stop()
 
 # --- 4. NAVIGATION ---
-st.sidebar.title("🗂️ Navigasi Laporan")
+st.sidebar.title("Navigasi Laporan")
 page = st.sidebar.radio(
     "Pilih Dashboard:",
     ["Dashboard Framing (Manipulasi)", "Data Sebenarnya (Jujur)"]
